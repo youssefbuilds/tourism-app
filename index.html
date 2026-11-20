@@ -275,6 +275,20 @@
   .tab .ic { font-size:19px; }
 
   .empty-state { text-align:center; padding:40px 20px; color:var(--muted); font-family:var(--display); font-weight:600; }
+
+  .auth-card { background:var(--paper); border:3px solid var(--ink); border-radius:22px; box-shadow:5px 5px 0 var(--shadow-heavy); padding:20px 18px; }
+  .auth-tabs { display:flex; gap:8px; margin-bottom:16px; }
+  .auth-tab { flex:1; text-align:center; padding:9px 0; border:3px solid var(--ink); border-radius:14px; font-family:var(--display); font-weight:700; cursor:pointer; background:var(--cream); color:var(--ink); }
+  .auth-tab.active { background:var(--coral); color:#fff; }
+  .auth-field { display:block; margin-bottom:12px; font-family:var(--display); font-weight:600; font-size:13px; color:var(--ink); }
+  .auth-field input { display:block; width:100%; margin-top:5px; padding:11px 13px; border:3px solid var(--ink); border-radius:14px; background:var(--cream); color:var(--ink); font-family:var(--body); font-weight:600; font-size:15px; outline:none; }
+  .auth-field input:focus { border-color:var(--coral-deep); }
+  .auth-error { color:var(--coral-deep); font-weight:700; font-size:13px; min-height:18px; margin:0 0 8px; }
+  .auth-link { text-align:center; margin-top:12px; font-size:13px; font-weight:700; color:var(--grape-deep); cursor:pointer; text-decoration:underline; }
+  .auth-note { font-size:11px; color:var(--muted); font-weight:600; text-align:center; margin-top:10px; }
+  .acct-row { display:flex; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:2px dashed var(--muted); font-weight:700; font-size:14px; }
+  .reward-btn[disabled] { opacity:.5; cursor:not-allowed; }
+  .tab-badge { position:absolute; }
   ::selection { background:var(--sunshine); color:#4A3728; }
 </style>
 </head>
@@ -289,7 +303,7 @@
       <div class="screen active" id="screen-discover">
         <div class="topbar">
           <div class="logo-row"><span class="logo-dot">🐫</span><h1>Yalla Masr</h1></div>
-          <button class="theme-toggle" onclick="document.body.classList.toggle('dark')">🌓</button>
+          <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
         </div>
         <div class="body-pad">
           <p class="tagline">Verified sellers. Happy fixed prices. <span class="arabic">بسعر عادل، من غير متاعب.</span> 🌞</p>
@@ -406,6 +420,47 @@
         </div>
       </div>
 
+      <!-- ============ LOGIN ============ -->
+      <div class="screen" id="screen-login">
+        <div class="topbar"><div class="logo-row"><span class="logo-dot">🐫</span><h1>Yalla Masr</h1></div></div>
+        <div class="body-pad">
+          <p class="tagline">Log in to keep your locked prices and Yalla Points safe. <span class="arabic">أهلاً بيك!</span></p>
+          <div class="auth-card">
+            <div class="auth-tabs">
+              <div class="auth-tab active" id="auth-tab-in" onclick="setAuthMode('in')">Log in</div>
+              <div class="auth-tab" id="auth-tab-up" onclick="setAuthMode('up')">Sign up</div>
+            </div>
+            <form id="auth-form" onsubmit="return submitAuth(event)" novalidate>
+              <label class="auth-field" id="auth-name-wrap" style="display:none;">Your name
+                <input id="auth-name" type="text" autocomplete="name" placeholder="e.g. Sofia">
+              </label>
+              <label class="auth-field">Email
+                <input id="auth-email" type="email" autocomplete="email" placeholder="you@example.com">
+              </label>
+              <label class="auth-field">Password
+                <input id="auth-password" type="password" autocomplete="current-password" placeholder="At least 6 characters">
+              </label>
+              <p class="auth-error" id="auth-error"></p>
+              <button type="submit" class="release-btn" id="auth-submit" style="width:100%; background:var(--coral);">Log in</button>
+            </form>
+            <div class="auth-link" id="auth-forgot" onclick="forgotPassword()">Forgot password?</div>
+            <div class="auth-link" onclick="continueAsGuest()">Continue as guest</div>
+            <p class="auth-note" id="auth-note"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ ACCOUNT ============ -->
+      <div class="screen" id="screen-account">
+        <div class="topbar"><h1>Account 👤</h1></div>
+        <div class="body-pad" style="padding-top:2px;">
+          <div class="auth-card" id="account-card"></div>
+          <p class="section-label" style="margin-top:20px;">🎁 My redeemed perks</p>
+          <div id="redeemed-list"></div>
+          <button class="release-btn" id="account-action" style="width:100%; margin-top:18px; background:var(--grape);" onclick="logout()">Log out</button>
+        </div>
+      </div>
+
     </div>
 
     <div class="toast" id="toast"></div>
@@ -415,6 +470,7 @@
       <div class="tab" data-tab="screen-browse" onclick="tabTo('screen-browse', this)"><div class="ic">📖</div>Browse</div>
       <div class="tab" data-tab="screen-tickets" onclick="tabTo('screen-tickets', this)"><div class="ic">🎫</div>Tickets</div>
       <div class="tab" data-tab="screen-rewards" onclick="tabTo('screen-rewards', this)"><div class="ic">🎁</div>Rewards</div>
+      <div class="tab" data-tab="screen-account" onclick="tabTo('screen-account', this)"><div class="ic">👤</div>Account</div>
     </div>
   </div>
 </div>
@@ -430,6 +486,7 @@ const ICONS = { shops:'🏺', guides:'🗺️', transport:'🚕' };
 const CAT_LABEL = { shops:'Shops', guides:'Guides', transport:'Transport', all:'All' };
 
 const USD_RATE = 50; 
+function esc(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 const sellers = [
   { id:1, category:'shops', name:'Bayt Al Nas Papyrus House', area:'Khan el-Khalili, Cairo', rating:4.8, reviews:212,
@@ -494,6 +551,7 @@ let myTickets = [
 ];
 
 let userPoints = 150;
+let redeemed = [];
 
 function cardHTML(s){
   return `<div class="seller-card" onclick="openDetail(${s.id})">
@@ -526,7 +584,7 @@ function renderDiscover(query = ''){
   }
 
   if(picks.length === 0){
-    document.getElementById('discover-list').innerHTML = `<div class="empty-state">No verified sellers found matching "${query}".</div>`;
+    document.getElementById('discover-list').innerHTML = `<div class="empty-state">No verified sellers found matching "${esc(query)}".</div>`;
   } else {
     document.getElementById('discover-list').innerHTML = picks.map(cardHTML).join('');
   }
@@ -581,6 +639,7 @@ function openDetail(id){
 }
 
 function lockPrice(sellerId, itemIndex){
+  if(!currentUser){ showToast('🔐 Log in to lock a price'); openLogin(); return; }
   const s = sellers.find(x => x.id === sellerId);
   const it = s.items[itemIndex];
   const ticketId = 'YM-' + Math.floor(10000 + Math.random()*89999);
@@ -595,6 +654,7 @@ function lockPrice(sellerId, itemIndex){
   };
 
   myTickets.unshift(newTicket);
+  saveState();
   renderMyTickets();
 
   document.getElementById('locked-card-container').innerHTML = renderContractHTML(newTicket, true);
@@ -642,6 +702,7 @@ function simulateRelease(ticketId){
   if(ticket){
     ticket.status = 'released';
     userPoints += 50;
+    saveState();
     updatePointsDisplay();
     renderMyTickets();
     
@@ -664,11 +725,23 @@ function updatePointsDisplay() {
 function redeemReward(name, cost) {
   if (userPoints >= cost) {
     userPoints -= cost;
+    const code = 'YM-' + name.replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase() + '-' + Math.floor(1000 + Math.random()*8999);
+    redeemed.unshift({ name, cost, code, date: new Date().toLocaleDateString() });
     updatePointsDisplay();
-    showToast(`🎁 Unlocked ${name}! Code saved to profile.`);
+    renderRedeemed();
+    saveState();
+    showToast(`🎁 Unlocked ${name}! Code ${code} saved to your account.`);
   } else {
     showToast(`🔒 You need ${cost - userPoints} more Yalla Points!`);
   }
+}
+
+function renderRedeemed(){
+  const el = document.getElementById('redeemed-list');
+  if(!el) return;
+  el.innerHTML = redeemed.length
+    ? redeemed.map(r => `<div class="reward-item"><div class="reward-info"><h4>${esc(r.name)}</h4><p>Code ${esc(r.code)} · ${esc(r.date)}</p></div></div>`).join('')
+    : '<div class="empty-state">No perks redeemed yet.<br>Earn points from completed tickets!</div>';
 }
 
 function reportIssue(){
@@ -694,20 +767,148 @@ function setActiveTab(id){
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
 }
 
+
+/* ================= Auth + per-user state ================= */
+let currentUser = null;   // {uid,email,name,mode}
+let authMode = 'in';
+let localOnlyNoticeShown = false;
+
+function toggleTheme(){
+  document.body.classList.toggle('dark');
+  try{ localStorage.setItem('ym_dark', document.body.classList.contains('dark') ? '1':'0'); }catch(e){}
+}
+function stateKey(){ return 'ym_state_' + (currentUser ? currentUser.uid : 'guest'); }
+function saveState(){
+  try{ localStorage.setItem(stateKey(), JSON.stringify({ myTickets, userPoints, redeemed })); }catch(e){}
+}
+function loadState(){
+  let st = null;
+  try{ st = JSON.parse(localStorage.getItem(stateKey())); }catch(e){}
+  if(st){ myTickets = st.myTickets || []; userPoints = st.userPoints ?? 150; redeemed = st.redeemed || []; }
+  else { myTickets = [{ id:'YM-88214', item:'Museum-quality papyrus (A3)', seller:'Bayt Al Nas Papyrus House · Khan el-Khalili', priceEgp:450, priceUsd:9, status:'escrow' }]; userPoints = 150; redeemed = []; }
+  renderMyTickets(); updatePointsDisplay(); renderRedeemed(); renderAccount();
+}
+
+function renderAccount(){
+  const card = document.getElementById('account-card');
+  const btn = document.getElementById('account-action');
+  if(currentUser && currentUser.uid !== 'guest'){
+    card.innerHTML = `<div class="acct-row"><span>Name</span><span>${esc(currentUser.name || '—')}</span></div>
+      <div class="acct-row"><span>Email</span><span>${esc(currentUser.email)}</span></div>
+      <div class="acct-row" style="border:none;"><span>Yalla Points</span><span>${userPoints}</span></div>`;
+    btn.textContent = 'Log out'; btn.onclick = logout;
+  } else {
+    card.innerHTML = `<div class="acct-row" style="border:none;"><span>You are browsing as a guest</span></div>
+      <p class="tagline" style="margin:8px 0 0;">Log in to lock prices and keep your tickets and points on your account.</p>`;
+    btn.textContent = 'Log in / Sign up'; btn.onclick = openLogin;
+  }
+}
+
+function openLogin(){ showScreen('screen-login'); document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); }
+function setAuthMode(m){
+  authMode = m;
+  document.getElementById('auth-tab-in').classList.toggle('active', m==='in');
+  document.getElementById('auth-tab-up').classList.toggle('active', m==='up');
+  document.getElementById('auth-name-wrap').style.display = m==='up' ? 'block' : 'none';
+  document.getElementById('auth-submit').textContent = m==='up' ? 'Create account' : 'Log in';
+  document.getElementById('auth-forgot').style.display = m==='up' ? 'none' : 'block';
+  document.getElementById('auth-password').autocomplete = m==='up' ? 'new-password' : 'current-password';
+  document.getElementById('auth-error').textContent = '';
+}
+function authError(msg){ document.getElementById('auth-error').textContent = msg; }
+
+function friendlyAuthError(code){
+  const m = {
+    'auth/invalid-email':'That email address doesn\'t look right.',
+    'auth/missing-password':'Enter your password.',
+    'auth/weak-password':'Password must be at least 6 characters.',
+    'auth/email-already-in-use':'An account with this email already exists. Try logging in.',
+    'auth/user-not-found':'No account with this email. Try signing up.',
+    'auth/wrong-password':'Wrong email or password.',
+    'auth/invalid-credential':'Wrong email or password.',
+    'auth/invalid-login-credentials':'Wrong email or password.',
+    'auth/too-many-requests':'Too many attempts. Wait a bit and try again.'
+  };
+  return m[code] || 'Something went wrong. Please try again.';
+}
+
+async function submitAuth(ev){
+  ev.preventDefault();
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const name = document.getElementById('auth-name').value.trim();
+  if(!/^\S+@\S+\.\S+$/.test(email)) return authError(friendlyAuthError('auth/invalid-email')), false;
+  if(!password) return authError(friendlyAuthError('auth/missing-password')), false;
+  if(authMode==='up' && password.length < 6) return authError(friendlyAuthError('auth/weak-password')), false;
+  authError('');
+  const btn = document.getElementById('auth-submit'); btn.disabled = true;
+  try{
+    const user = await window.YMAuth.submit(authMode, email, password, name);
+    onSignedIn(user);
+  }catch(e){
+    authError(e && e.code ? friendlyAuthError(e.code) : (e && e.message) || 'Something went wrong.');
+  }finally{ btn.disabled = false; }
+  return false;
+}
+
+function onSignedIn(user){
+  currentUser = user;
+  try{ localStorage.removeItem('ym_guest'); }catch(e){}
+  document.getElementById('auth-password').value = '';
+  loadState();
+  showScreen('screen-discover'); setActiveTab('screen-discover');
+  showToast('👋 Welcome' + (user.name ? ', ' + user.name : '') + '!');
+  if(user.mode === 'local' && !localOnlyNoticeShown){ localOnlyNoticeShown = true; }
+}
+async function logout(){
+  try{ await window.YMAuth.signOut(); }catch(e){}
+  currentUser = null;
+  try{ localStorage.removeItem('ym_guest'); }catch(e){}
+  loadState();
+  openLogin();
+  showToast('Logged out');
+}
+function continueAsGuest(){
+  currentUser = null;
+  try{ localStorage.setItem('ym_guest','1'); }catch(e){}
+  loadState();
+  showScreen('screen-discover'); setActiveTab('screen-discover');
+}
+async function forgotPassword(){
+  const email = document.getElementById('auth-email').value.trim();
+  if(!/^\S+@\S+\.\S+$/.test(email)) return authError('Type your email above first.');
+  try{ await window.YMAuth.reset(email); authError(''); showToast('📧 If that email has an account, a reset link is on its way.'); }
+  catch(e){ authError(e && e.message ? e.message : 'Could not send reset email.'); }
+}
+
+/* called by the Firebase module once it knows the session */
+window.onAuthReady = function(user){
+  if(user){ currentUser = user; loadState(); showScreen('screen-discover'); }
+  else if(localStorage.getItem('ym_guest')==='1'){ currentUser = null; loadState(); showScreen('screen-discover'); }
+  else { currentUser = null; loadState(); openLogin(); }
+};
+
+try{ if(localStorage.getItem('ym_dark')==='1') document.body.classList.add('dark'); }catch(e){}
+(function clock(){
+  const el = document.querySelector('.statusbar span');
+  const tick = () => { const d = new Date(); el.textContent = d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0'); };
+  tick(); setInterval(tick, 20000);
+})();
+// Show login right away; module script then restores any saved session
+openLogin();
+setAuthMode('in');
 renderDiscover();
 renderBrowse();
 renderMyTickets();
 updatePointsDisplay();
+renderRedeemed();
+renderAccount();
 </script>
   <script type="module">
-  // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-analytics.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
+  import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
   const firebaseConfig = {
     apiKey: "AIzaSyATcWQoseBbJcqItZf_r4Zam1PIWFZbbYQ",
     authDomain: "yalla-masr-911.firebaseapp.com",
@@ -718,9 +919,70 @@ updatePointsDisplay();
     measurementId: "G-VGV8X6XHWN"
   };
 
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+  try { getAnalytics(app); } catch(e) {}
+  const auth = getAuth(app);
+
+  // Errors that mean Firebase email/password isn't available for this project/network.
+  // In that case accounts are kept on this device so the login page still works.
+  const FALLBACK = ['auth/operation-not-allowed','auth/configuration-not-found','auth/network-request-failed','auth/admin-restricted-operation','auth/internal-error','auth/unauthorized-domain'];
+
+  const LS_ACCTS = 'ym_local_accounts', LS_SESSION = 'ym_local_session';
+  const readAccts = () => { try{ return JSON.parse(localStorage.getItem(LS_ACCTS)) || {}; }catch(e){ return {}; } };
+  async function sha(t){ const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)); return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join(''); }
+  const err = (code) => Object.assign(new Error(code), { code });
+
+  async function localSubmit(mode, email, password, name){
+    const accts = readAccts(); const key = email.toLowerCase(); const h = await sha(key + ':' + password);
+    if(mode === 'up'){
+      if(accts[key]) throw err('auth/email-already-in-use');
+      accts[key] = { h, name: name || email.split('@')[0] };
+      localStorage.setItem(LS_ACCTS, JSON.stringify(accts));
+    } else {
+      if(!accts[key]) throw err('auth/user-not-found');
+      if(accts[key].h !== h) throw err('auth/wrong-password');
+    }
+    localStorage.setItem(LS_SESSION, key);
+    return { uid: 'local_' + key, email, name: accts[key].name, mode: 'local' };
+  }
+
+  const toUser = (u) => ({ uid: u.uid, email: u.email, name: u.displayName || (u.email||'').split('@')[0], mode: 'firebase' });
+
+  window.YMAuth = {
+    async submit(mode, email, password, name){
+      try{
+        if(mode === 'up'){
+          const cred = await createUserWithEmailAndPassword(auth, email, password);
+          if(name) { try{ await updateProfile(cred.user, { displayName: name }); }catch(e){} }
+          return { ...toUser(cred.user), name: name || toUser(cred.user).name };
+        }
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        return toUser(cred.user);
+      }catch(e){
+        if(e && FALLBACK.includes(e.code)) return localSubmit(mode, email, password, name);
+        throw e;
+      }
+    },
+    async signOut(){ localStorage.removeItem(LS_SESSION); try{ await signOut(auth); }catch(e){} },
+    async reset(email){
+      try{ await sendPasswordResetEmail(auth, email); }
+      catch(e){
+        if(e && FALLBACK.includes(e.code)) throw new Error('Password reset email is not available right now.');
+        if(e && (e.code==='auth/user-not-found')) return;
+        throw e;
+      }
+    }
+  };
+
+  let first = true;
+  onAuthStateChanged(auth, (u) => {
+    if(!first) return;
+    first = false;
+    if(u) return window.onAuthReady(toUser(u));
+    const k = localStorage.getItem(LS_SESSION), a = readAccts();
+    if(k && a[k]) return window.onAuthReady({ uid:'local_'+k, email:k, name:a[k].name, mode:'local' });
+    window.onAuthReady(null);
+  }, () => { first = false; window.onAuthReady(null); });
 </script>
 </body>
 </html>
