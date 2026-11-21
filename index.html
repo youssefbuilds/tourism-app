@@ -285,7 +285,6 @@
   .auth-field input:focus { border-color:var(--coral-deep); }
   .auth-error { color:var(--coral-deep); font-weight:700; font-size:13px; min-height:18px; margin:0 0 8px; }
   .auth-link { text-align:center; margin-top:12px; font-size:13px; font-weight:700; color:var(--grape-deep); cursor:pointer; text-decoration:underline; }
-  .auth-link.guest-suggested { color:#fff; background:var(--grape); text-decoration:none; border:3px solid var(--ink); border-radius:14px; padding:10px 12px; box-shadow:3px 3px 0 var(--shadow-heavy); }
   .auth-note { font-size:11px; color:var(--muted); font-weight:600; text-align:center; margin-top:10px; }
   .acct-row { display:flex; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:2px dashed var(--muted); font-weight:700; font-size:14px; }
   .reward-btn[disabled] { opacity:.5; cursor:not-allowed; }
@@ -395,8 +394,8 @@
           
           <div class="rewards-card">
             <h2>Your Yalla Points</h2>
-            <div class="points-display" id="user-points-display">150 <span>pts</span></div>
-            <div class="progress-bar"><div class="progress-fill" id="points-progress-fill" style="width: 25%;"></div></div>
+            <div class="points-display" id="user-points-display">0 <span>pts</span></div>
+            <div class="progress-bar"><div class="progress-fill" id="points-progress-fill" style="width: 0;"></div></div>
             <p style="margin:0; font-size:12px; color:var(--muted); font-weight:600;">Earn 50 pts for every ticket completed & unlocked.</p>
           </div>
 
@@ -445,7 +444,6 @@
               <button type="submit" class="release-btn" id="auth-submit" style="width:100%; background:var(--coral);">Log in</button>
             </form>
             <div class="auth-link" id="auth-forgot" onclick="forgotPassword()">Forgot password?</div>
-            <div class="auth-link" id="auth-guest" onclick="continueAsGuest()">Continue as guest</div>
             <p class="auth-note" id="auth-note">Demo build — sign-in runs on Firebase; tickets, points and perks live only in this browser.</p>
           </div>
         </div>
@@ -466,7 +464,7 @@
 
     <div class="toast" id="toast"></div>
 
-    <div class="tabbar">
+    <div class="tabbar" style="display:none;">
       <div class="tab active" data-tab="screen-discover" onclick="tabTo('screen-discover', this)"><div class="ic">🧭</div>Discover</div>
       <div class="tab" data-tab="screen-browse" onclick="tabTo('screen-browse', this)"><div class="ic">📖</div>Browse</div>
       <div class="tab" data-tab="screen-tickets" onclick="tabTo('screen-tickets', this)"><div class="ic">🎫</div>Tickets</div>
@@ -540,18 +538,9 @@ const sellers = [
     reviews_list:[{name:'Tom, UK', stars:'★★★★★', text:'Agreed the hourly rate before boarding through the app — captain honored it.'}] },
 ];
 
-let myTickets = [
-  {
-    id: 'YM-88214',
-    item: 'Museum-quality papyrus (A3)',
-    seller: 'Bayt Al Nas Papyrus House · Khan el-Khalili',
-    priceEgp: 450,
-    priceUsd: 9,
-    status: 'escrow'
-  }
-];
+let myTickets = [];
 
-let userPoints = 150;
+let userPoints = 0;
 let redeemed = [];
 
 function cardHTML(s){
@@ -719,7 +708,7 @@ function simulateRelease(ticketId){
 
 function updatePointsDisplay() {
   document.getElementById('user-points-display').innerHTML = `${userPoints} <span>pts</span>`;
-  const pct = Math.min(100, Math.max(10, (userPoints / 400) * 100));
+  const pct = Math.min(100, (userPoints / 400) * 100);
   document.getElementById('points-progress-fill').style.width = `${pct}%`;
 }
 
@@ -757,10 +746,13 @@ function showToast(msg){
 }
 
 function showScreen(id){
+  if(!currentUser && id !== 'screen-login') id = 'screen-login';
   document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
   const s = document.getElementById(id);
   s.classList.add('active');
   s.scrollTop = 0;
+  const tabbar = document.querySelector('.tabbar');
+  if(tabbar) tabbar.style.display = currentUser ? '' : 'none';
 }
 
 function tabTo(id, el){ showScreen(id); setActiveTab(id); }
@@ -777,29 +769,30 @@ function toggleTheme(){
   document.body.classList.toggle('dark');
   try{ localStorage.setItem('ym_dark', document.body.classList.contains('dark') ? '1':'0'); }catch(e){}
 }
-function stateKey(){ return 'ym_state_' + (currentUser ? currentUser.uid : 'guest'); }
+function stateKey(){ return 'ym_state_' + currentUser.uid; }
 function saveState(){
+  if(!currentUser) return;
   try{ localStorage.setItem(stateKey(), JSON.stringify({ myTickets, userPoints, redeemed })); }catch(e){}
 }
 function loadState(){
   let st = null;
-  try{ st = JSON.parse(localStorage.getItem(stateKey())); }catch(e){}
-  if(st){ myTickets = st.myTickets || []; userPoints = st.userPoints ?? 150; redeemed = st.redeemed || []; }
-  else { myTickets = [{ id:'YM-88214', item:'Museum-quality papyrus (A3)', seller:'Bayt Al Nas Papyrus House · Khan el-Khalili', priceEgp:450, priceUsd:9, status:'escrow' }]; userPoints = 150; redeemed = []; }
+  if(currentUser){ try{ st = JSON.parse(localStorage.getItem(stateKey())); }catch(e){} }
+  if(st){ myTickets = st.myTickets || []; userPoints = st.userPoints ?? 0; redeemed = st.redeemed || []; }
+  else { myTickets = []; userPoints = 0; redeemed = []; }
   renderMyTickets(); updatePointsDisplay(); renderRedeemed(); renderAccount();
 }
 
 function renderAccount(){
   const card = document.getElementById('account-card');
   const btn = document.getElementById('account-action');
-  if(currentUser && currentUser.uid !== 'guest'){
+  if(currentUser){
     card.innerHTML = `<div class="acct-row"><span>Name</span><span>${esc(currentUser.name || '—')}</span></div>
       <div class="acct-row"><span>Email</span><span>${esc(currentUser.email)}</span></div>
       <div class="acct-row" style="border:none;"><span>Yalla Points</span><span>${userPoints}</span></div>`;
     btn.textContent = 'Log out'; btn.onclick = logout;
   } else {
-    card.innerHTML = `<div class="acct-row" style="border:none;"><span>You are browsing as a guest</span></div>
-      <p class="tagline" style="margin:8px 0 0;">Log in to lock demo prices. Tickets and points stay saved on this device.</p>`;
+    card.innerHTML = `<div class="acct-row" style="border:none;"><span>You're not logged in</span></div>
+      <p class="tagline" style="margin:8px 0 0;">Log in or sign up to lock demo prices. Tickets and points stay saved on this device.</p>`;
     btn.textContent = 'Log in / Sign up'; btn.onclick = openLogin;
   }
 }
@@ -828,12 +821,12 @@ function friendlyAuthError(code){
     'auth/invalid-credential':'Wrong email or password.',
     'auth/invalid-login-credentials':'Wrong email or password.',
     'auth/too-many-requests':'Too many attempts. Wait a bit and try again.',
-    'auth/network-request-failed':'Can\'t reach the sign-in service. Check your connection and try again, or continue as a guest below.',
-    'auth/operation-not-allowed':'Sign-in isn\'t available right now. Try again later, or continue as a guest below.',
-    'auth/configuration-not-found':'Sign-in isn\'t available right now. Try again later, or continue as a guest below.',
-    'auth/admin-restricted-operation':'Sign-in isn\'t available right now. Try again later, or continue as a guest below.',
-    'auth/internal-error':'Sign-in isn\'t available right now. Try again later, or continue as a guest below.',
-    'auth/unauthorized-domain':'Sign-in isn\'t available right now. Try again later, or continue as a guest below.'
+    'auth/network-request-failed':'Can\'t reach the sign-in service. Check your connection and try again.',
+    'auth/operation-not-allowed':'Sign-in isn\'t available right now. Please try again later.',
+    'auth/configuration-not-found':'Sign-in isn\'t available right now. Please try again later.',
+    'auth/admin-restricted-operation':'Sign-in isn\'t available right now. Please try again later.',
+    'auth/internal-error':'Sign-in isn\'t available right now. Please try again later.',
+    'auth/unauthorized-domain':'Sign-in isn\'t available right now. Please try again later.'
   };
   return m[code] || 'Something went wrong. Please try again.';
 }
@@ -847,22 +840,18 @@ async function submitAuth(ev){
   if(!password) return authError(friendlyAuthError('auth/missing-password')), false;
   if(authMode==='up' && password.length < 6) return authError(friendlyAuthError('auth/weak-password')), false;
   authError('');
-  const guestLink = document.getElementById('auth-guest');
-  if(guestLink) guestLink.classList.remove('guest-suggested');
   const btn = document.getElementById('auth-submit'); btn.disabled = true;
   try{
     const user = await window.YMAuth.submit(authMode, email, password, name);
     onSignedIn(user);
   }catch(e){
     authError(e && e.code ? friendlyAuthError(e.code) : (e && e.message) || 'Something went wrong.');
-    if(window.YMAuth && YMAuth.isUnavailable && YMAuth.isUnavailable(e) && guestLink) guestLink.classList.add('guest-suggested');
   }finally{ btn.disabled = false; }
   return false;
 }
 
 function onSignedIn(user){
   currentUser = user;
-  try{ localStorage.removeItem('ym_guest'); }catch(e){}
   document.getElementById('auth-password').value = '';
   loadState();
   showScreen('screen-discover'); setActiveTab('screen-discover');
@@ -871,16 +860,9 @@ function onSignedIn(user){
 async function logout(){
   try{ await window.YMAuth.signOut(); }catch(e){}
   currentUser = null;
-  try{ localStorage.removeItem('ym_guest'); }catch(e){}
   loadState();
   openLogin();
   showToast('Logged out');
-}
-function continueAsGuest(){
-  currentUser = null;
-  try{ localStorage.setItem('ym_guest','1'); }catch(e){}
-  loadState();
-  showScreen('screen-discover'); setActiveTab('screen-discover');
 }
 async function forgotPassword(){
   const email = document.getElementById('auth-email').value.trim();
@@ -892,7 +874,6 @@ async function forgotPassword(){
 /* called by the Firebase module once it knows the session */
 window.onAuthReady = function(user){
   if(user){ currentUser = user; loadState(); showScreen('screen-discover'); }
-  else if(localStorage.getItem('ym_guest')==='1'){ currentUser = null; loadState(); showScreen('screen-discover'); }
   else { currentUser = null; loadState(); openLogin(); }
 };
 
@@ -933,7 +914,7 @@ renderAccount();
 
   // Sign-in is Firebase-only: no on-device account fallback, and no passwords
   // or credential hashes are ever stored in the browser. If Firebase can't be
-  // reached, the login page shows a clear error and offers "Continue as guest".
+  // reached, the login page shows a clear error.
   const UNAVAILABLE = ['auth/operation-not-allowed','auth/configuration-not-found','auth/network-request-failed','auth/admin-restricted-operation','auth/internal-error','auth/unauthorized-domain'];
 
   const toUser = (u) => ({ uid: u.uid, email: u.email, name: u.displayName || (u.email||'').split('@')[0], mode: 'firebase' });
@@ -969,4 +950,3 @@ renderAccount();
 </script>
 </body>
 </html>
-
