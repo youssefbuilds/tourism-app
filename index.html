@@ -285,6 +285,7 @@
   .auth-field input:focus { border-color:var(--coral-deep); }
   .auth-error { color:var(--coral-deep); font-weight:700; font-size:13px; min-height:18px; margin:0 0 8px; }
   .auth-link { text-align:center; margin-top:12px; font-size:13px; font-weight:700; color:var(--grape-deep); cursor:pointer; text-decoration:underline; }
+  .auth-link.guest-suggested { color:#fff; background:var(--grape); text-decoration:none; border:3px solid var(--ink); border-radius:14px; padding:10px 12px; box-shadow:3px 3px 0 var(--shadow-heavy); }
   .auth-note { font-size:11px; color:var(--muted); font-weight:600; text-align:center; margin-top:10px; }
   .acct-row { display:flex; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:2px dashed var(--muted); font-weight:700; font-size:14px; }
   .reward-btn[disabled] { opacity:.5; cursor:not-allowed; }
@@ -306,7 +307,7 @@
           <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
         </div>
         <div class="body-pad">
-          <p class="tagline">Verified sellers. Happy fixed prices. <span class="arabic">بسعر عادل، من غير متاعب.</span> 🌞</p>
+          <p class="tagline">A demo preview of happy fixed prices. <span class="arabic">بسعر عادل، من غير متاعب.</span> 🌞</p>
           <div class="search">
             <span>🔍</span>
             <input id="search-input" placeholder="Search shops, guides, items…" oninput="handleSearch(this.value)">
@@ -319,7 +320,7 @@
             <div class="cat-tile" onclick="openBrowse('transport')"><div class="ic" style="background:var(--teal);">🚕</div><div class="lbl">Transport</div></div>
           </div>
 
-          <p class="eyebrow" id="discover-list-title">⭐ Verified today, near you</p>
+          <p class="eyebrow" id="discover-list-title">⭐ Sample picks, near you</p>
           <div id="discover-list"></div>
         </div>
       </div>
@@ -346,7 +347,7 @@
           <div class="verified-row">
             <div class="stamp stamp-sm"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#4A3728" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
             <div class="verified-text">
-              <div class="vt1" id="detail-verified-line">Verified · happy fair price</div>
+              <div class="vt1" id="detail-verified-line">Sample listing · happy fair price</div>
               <div class="vt2" id="detail-license"></div>
             </div>
           </div>
@@ -355,7 +356,7 @@
           <p class="section-label">🎟️ Fixed price catalog</p>
           <div class="ticket" id="detail-ticket"></div>
 
-          <p class="section-label">💬 Verified Reviews</p>
+          <p class="section-label">💬 Sample Reviews</p>
           <div id="detail-reviews"></div>
 
           <div class="flag-link" onclick="reportIssue()">🚩 Report a price issue with this seller</div>
@@ -366,7 +367,7 @@
       <div class="screen" id="screen-tickets">
         <div class="topbar"><h1>My Tickets 🎫</h1></div>
         <div class="body-pad" style="padding-top:2px;">
-          <p class="tagline">Your locked-in happy prices. Show these to the seller — they've already agreed! ✨</p>
+          <p class="tagline">Your demo tickets. Prices are a preview — no seller has agreed to them yet. ✨</p>
           <div id="my-tickets-container"></div>
         </div>
       </div>
@@ -379,7 +380,7 @@
         </div>
         <div class="body-pad" style="padding-top:14px; text-align:center;">
           <div class="stamp" style="margin:10px auto 16px;"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#4A3728" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <p class="tagline" style="text-align:center;">Funds held safely in Escrow. Show this QR to the vendor upon service completion! 🤝</p>
+          <p class="tagline" style="text-align:center;">Demo only — no payment was taken and no vendor is expecting this QR. 🤝</p>
           
           <div id="locked-card-container"></div>
 
@@ -424,7 +425,7 @@
       <div class="screen" id="screen-login">
         <div class="topbar"><div class="logo-row"><span class="logo-dot">🐫</span><h1>Yalla Masr</h1></div></div>
         <div class="body-pad">
-          <p class="tagline">Log in to keep your locked prices and Yalla Points safe. <span class="arabic">أهلاً بيك!</span></p>
+          <p class="tagline">Log in to try the full demo. Tickets and points are saved on this device only. <span class="arabic">أهلاً بيك!</span></p>
           <div class="auth-card">
             <div class="auth-tabs">
               <div class="auth-tab active" id="auth-tab-in" onclick="setAuthMode('in')">Log in</div>
@@ -444,8 +445,8 @@
               <button type="submit" class="release-btn" id="auth-submit" style="width:100%; background:var(--coral);">Log in</button>
             </form>
             <div class="auth-link" id="auth-forgot" onclick="forgotPassword()">Forgot password?</div>
-            <div class="auth-link" onclick="continueAsGuest()">Continue as guest</div>
-            <p class="auth-note" id="auth-note"></p>
+            <div class="auth-link" id="auth-guest" onclick="continueAsGuest()">Continue as guest</div>
+            <p class="auth-note" id="auth-note">Demo build — sign-in runs on Firebase; tickets, points and perks live only in this browser.</p>
           </div>
         </div>
       </div>
@@ -580,11 +581,11 @@ function renderDiscover(query = ''){
     document.getElementById('discover-list-title').textContent = `🔍 Search Results (${picks.length})`;
   } else {
     picks = sellers.filter(s => s.rating >= 4.7);
-    document.getElementById('discover-list-title').textContent = '⭐ Verified today, near you';
+    document.getElementById('discover-list-title').textContent = '⭐ Sample picks, near you';
   }
 
   if(picks.length === 0){
-    document.getElementById('discover-list').innerHTML = `<div class="empty-state">No verified sellers found matching "${esc(query)}".</div>`;
+    document.getElementById('discover-list').innerHTML = `<div class="empty-state">No sellers found matching "${esc(query)}".</div>`;
   } else {
     document.getElementById('discover-list').innerHTML = picks.map(cardHTML).join('');
   }
@@ -616,8 +617,8 @@ function openDetail(id){
   document.getElementById('detail-hero').style.background = GRADIENTS[s.category];
   document.getElementById('detail-area').textContent = s.area.toUpperCase();
   document.getElementById('detail-name').textContent = s.name;
-  document.getElementById('detail-license').textContent = s.license ? s.license : 'Price-list agreement on file';
-  document.getElementById('detail-rating').textContent = `★ ${s.rating} · ${s.reviews} verified reviews`;
+  document.getElementById('detail-license').textContent = s.license ? s.license : 'Sample listing — demo price list';
+  document.getElementById('detail-rating').textContent = `★ ${s.rating} · ${s.reviews} sample reviews`;
 
   const rows = s.items.map((it, i) => `
     <div class="ticket-row">
@@ -669,7 +670,7 @@ function renderContractHTML(t, isConfirmationScreen = false){
       <div class="contract-top">
         <div>
           <div class="contract-brand">Yalla Masr</div>
-          <div class="contract-sub">Escrow Guarantee</div>
+          <div class="contract-sub">Demo Ticket</div>
         </div>
         <div class="stamp stamp-sm"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#4A3728" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </div>
@@ -678,12 +679,12 @@ function renderContractHTML(t, isConfirmationScreen = false){
       <div class="contract-price">EGP ${t.priceEgp}</div>
       <div class="contract-usd">Approx. $${t.priceUsd} USD</div>
       <div class="status-badge ${isEscrow ? 'escrow' : 'released'}">
-        ${isEscrow ? '🛡️ Funds Held in Escrow' : '✅ Service Complete & Released'}
+        ${isEscrow ? '🎫 Demo ticket — nothing paid' : '✅ Demo ticket completed'}
       </div>
       <svg class="wavy" viewBox="0 0 300 12" preserveAspectRatio="none"><path d="M0 6 Q15 0 30 6 T60 6 T90 6 T120 6 T150 6 T180 6 T210 6 T240 6 T270 6 T300 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
       <div class="qr" style="${!isEscrow ? 'opacity:0.3; filter:grayscale(1);' : ''}"></div>
-      <p class="contract-note">Ticket #${t.id}<br>${isEscrow ? 'Show QR to vendor upon service completion.' : 'This escrow contract is fulfilled.'}</p>
-      ${isEscrow ? `<button class="release-btn" style="width:100%;" onclick="simulateRelease('${t.id}')">Simulate Vendor Scan / Release Payment</button>` : ''}
+      <p class="contract-note">Ticket #${t.id}<br>${isEscrow ? 'Demo QR — no vendor will scan this.' : 'Demo ticket marked complete.'}</p>
+      ${isEscrow ? `<button class="release-btn" style="width:100%;" onclick="simulateRelease('${t.id}')">Simulate Vendor Scan / Complete Ticket</button>` : ''}
     </div>
   `;
 }
@@ -712,7 +713,7 @@ function simulateRelease(ticketId){
         lockedContainer.innerHTML = renderContractHTML(ticket, true);
     }
     
-    showToast('✨ Payment released! Earned +50 Yalla Points!');
+    showToast('✨ Demo ticket completed! +50 Yalla Points!');
   }
 }
 
@@ -730,7 +731,7 @@ function redeemReward(name, cost) {
     updatePointsDisplay();
     renderRedeemed();
     saveState();
-    showToast(`🎁 Unlocked ${name}! Code ${code} saved to your account.`);
+    showToast(`🎁 Unlocked ${name}! Demo code ${code} saved on this device.`);
   } else {
     showToast(`🔒 You need ${cost - userPoints} more Yalla Points!`);
   }
@@ -745,7 +746,7 @@ function renderRedeemed(){
 }
 
 function reportIssue(){
-  showToast('🚩 Reported — our Cairo support team will review this listing!');
+  showToast('🚩 Thanks for the flag! (Demo — no report was sent.)');
 }
 
 function showToast(msg){
@@ -771,7 +772,6 @@ function setActiveTab(id){
 /* ================= Auth + per-user state ================= */
 let currentUser = null;   // {uid,email,name,mode}
 let authMode = 'in';
-let localOnlyNoticeShown = false;
 
 function toggleTheme(){
   document.body.classList.toggle('dark');
@@ -799,7 +799,7 @@ function renderAccount(){
     btn.textContent = 'Log out'; btn.onclick = logout;
   } else {
     card.innerHTML = `<div class="acct-row" style="border:none;"><span>You are browsing as a guest</span></div>
-      <p class="tagline" style="margin:8px 0 0;">Log in to lock prices and keep your tickets and points on your account.</p>`;
+      <p class="tagline" style="margin:8px 0 0;">Log in to lock demo prices. Tickets and points stay saved on this device.</p>`;
     btn.textContent = 'Log in / Sign up'; btn.onclick = openLogin;
   }
 }
@@ -827,7 +827,13 @@ function friendlyAuthError(code){
     'auth/wrong-password':'Wrong email or password.',
     'auth/invalid-credential':'Wrong email or password.',
     'auth/invalid-login-credentials':'Wrong email or password.',
-    'auth/too-many-requests':'Too many attempts. Wait a bit and try again.'
+    'auth/too-many-requests':'Too many attempts. Wait a bit and try again.',
+    'auth/network-request-failed':'Can\'t reach the sign-in service. Check your connection and try again, or continue as a guest below.',
+    'auth/operation-not-allowed':'Sign-in isn\'t available right now. Try again later, or continue as a guest below.',
+    'auth/configuration-not-found':'Sign-in isn\'t available right now. Try again later, or continue as a guest below.',
+    'auth/admin-restricted-operation':'Sign-in isn\'t available right now. Try again later, or continue as a guest below.',
+    'auth/internal-error':'Sign-in isn\'t available right now. Try again later, or continue as a guest below.',
+    'auth/unauthorized-domain':'Sign-in isn\'t available right now. Try again later, or continue as a guest below.'
   };
   return m[code] || 'Something went wrong. Please try again.';
 }
@@ -841,12 +847,15 @@ async function submitAuth(ev){
   if(!password) return authError(friendlyAuthError('auth/missing-password')), false;
   if(authMode==='up' && password.length < 6) return authError(friendlyAuthError('auth/weak-password')), false;
   authError('');
+  const guestLink = document.getElementById('auth-guest');
+  if(guestLink) guestLink.classList.remove('guest-suggested');
   const btn = document.getElementById('auth-submit'); btn.disabled = true;
   try{
     const user = await window.YMAuth.submit(authMode, email, password, name);
     onSignedIn(user);
   }catch(e){
     authError(e && e.code ? friendlyAuthError(e.code) : (e && e.message) || 'Something went wrong.');
+    if(window.YMAuth && YMAuth.isUnavailable && YMAuth.isUnavailable(e) && guestLink) guestLink.classList.add('guest-suggested');
   }finally{ btn.disabled = false; }
   return false;
 }
@@ -858,7 +867,6 @@ function onSignedIn(user){
   loadState();
   showScreen('screen-discover'); setActiveTab('screen-discover');
   showToast('👋 Welcome' + (user.name ? ', ' + user.name : '') + '!');
-  if(user.mode === 'local' && !localOnlyNoticeShown){ localOnlyNoticeShown = true; }
 }
 async function logout(){
   try{ await window.YMAuth.signOut(); }catch(e){}
@@ -923,51 +931,29 @@ renderAccount();
   try { getAnalytics(app); } catch(e) {}
   const auth = getAuth(app);
 
-  // Errors that mean Firebase email/password isn't available for this project/network.
-  // In that case accounts are kept on this device so the login page still works.
-  const FALLBACK = ['auth/operation-not-allowed','auth/configuration-not-found','auth/network-request-failed','auth/admin-restricted-operation','auth/internal-error','auth/unauthorized-domain'];
-
-  const LS_ACCTS = 'ym_local_accounts', LS_SESSION = 'ym_local_session';
-  const readAccts = () => { try{ return JSON.parse(localStorage.getItem(LS_ACCTS)) || {}; }catch(e){ return {}; } };
-  async function sha(t){ const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t)); return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join(''); }
-  const err = (code) => Object.assign(new Error(code), { code });
-
-  async function localSubmit(mode, email, password, name){
-    const accts = readAccts(); const key = email.toLowerCase(); const h = await sha(key + ':' + password);
-    if(mode === 'up'){
-      if(accts[key]) throw err('auth/email-already-in-use');
-      accts[key] = { h, name: name || email.split('@')[0] };
-      localStorage.setItem(LS_ACCTS, JSON.stringify(accts));
-    } else {
-      if(!accts[key]) throw err('auth/user-not-found');
-      if(accts[key].h !== h) throw err('auth/wrong-password');
-    }
-    localStorage.setItem(LS_SESSION, key);
-    return { uid: 'local_' + key, email, name: accts[key].name, mode: 'local' };
-  }
+  // Sign-in is Firebase-only: no on-device account fallback, and no passwords
+  // or credential hashes are ever stored in the browser. If Firebase can't be
+  // reached, the login page shows a clear error and offers "Continue as guest".
+  const UNAVAILABLE = ['auth/operation-not-allowed','auth/configuration-not-found','auth/network-request-failed','auth/admin-restricted-operation','auth/internal-error','auth/unauthorized-domain'];
 
   const toUser = (u) => ({ uid: u.uid, email: u.email, name: u.displayName || (u.email||'').split('@')[0], mode: 'firebase' });
 
   window.YMAuth = {
+    isUnavailable: (e) => !!(e && UNAVAILABLE.includes(e.code)),
     async submit(mode, email, password, name){
-      try{
-        if(mode === 'up'){
-          const cred = await createUserWithEmailAndPassword(auth, email, password);
-          if(name) { try{ await updateProfile(cred.user, { displayName: name }); }catch(e){} }
-          return { ...toUser(cred.user), name: name || toUser(cred.user).name };
-        }
-        const cred = await signInWithEmailAndPassword(auth, email, password);
-        return toUser(cred.user);
-      }catch(e){
-        if(e && FALLBACK.includes(e.code)) return localSubmit(mode, email, password, name);
-        throw e;
+      if(mode === 'up'){
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        if(name) { try{ await updateProfile(cred.user, { displayName: name }); }catch(e){} }
+        return { ...toUser(cred.user), name: name || toUser(cred.user).name };
       }
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      return toUser(cred.user);
     },
-    async signOut(){ localStorage.removeItem(LS_SESSION); try{ await signOut(auth); }catch(e){} },
+    async signOut(){ try{ await signOut(auth); }catch(e){} },
     async reset(email){
       try{ await sendPasswordResetEmail(auth, email); }
       catch(e){
-        if(e && FALLBACK.includes(e.code)) throw new Error('Password reset email is not available right now.');
+        if(e && UNAVAILABLE.includes(e.code)) throw new Error('Password reset email is not available right now.');
         if(e && (e.code==='auth/user-not-found')) return;
         throw e;
       }
@@ -978,11 +964,9 @@ renderAccount();
   onAuthStateChanged(auth, (u) => {
     if(!first) return;
     first = false;
-    if(u) return window.onAuthReady(toUser(u));
-    const k = localStorage.getItem(LS_SESSION), a = readAccts();
-    if(k && a[k]) return window.onAuthReady({ uid:'local_'+k, email:k, name:a[k].name, mode:'local' });
-    window.onAuthReady(null);
+    window.onAuthReady(u ? toUser(u) : null);
   }, () => { first = false; window.onAuthReady(null); });
 </script>
 </body>
 </html>
+
